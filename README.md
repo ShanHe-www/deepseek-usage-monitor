@@ -210,3 +210,8 @@ deepseek用量插件/
 ---
 
 *如果你觉得这个扩展有用，欢迎给仓库点个 ⭐，或在 Issue 里反馈问题与建议。*
+## 注：本项目完全由Agent开发
+
+agent：claude桌面版
+模型：deepseek-v4-flash 0731
+思考强度：max
