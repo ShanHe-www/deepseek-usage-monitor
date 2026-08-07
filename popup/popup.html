@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>DeepSeek 用量全史</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- 顶栏：标题 + 状态 -->
+  <header>
+    <div class="title">
+      <img src="../icons/icon-48.png" alt="" class="logo">
+      <h1>DeepSeek 用量全史</h1>
+    </div>
+    <div id="sync-status" class="status">就绪</div>
+  </header>
+
+  <!-- 时间范围选择 -->
+  <section id="range-bar">
+    <div class="range-presets">
+      <button data-range="all" class="active">全部</button>
+      <button data-range="12m">近12月</button>
+      <button data-range="30d">近30天</button>
+      <button data-range="7d">近7天</button>
+      <button data-range="month">本月</button>
+    </div>
+    <div class="range-custom">
+      <label>从 <input type="date" id="date-start"></label>
+      <label>到 <input type="date" id="date-end"></label>
+      <button id="btn-apply-range" class="ghost sm">应用</button>
+    </div>
+  </section>
+
+  <!-- 总览统计卡片（仿官方：Total / Avg·Day / Active） -->
+  <section id="overview" class="stat-row">
+    <div class="stat-item">
+      <span class="stat-label">Tokens</span>
+      <span class="stat-value" id="total-tokens">--</span>
+      <span class="stat-sub">全部记录</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-label">总费用 (¥)</span>
+      <span class="stat-value" id="total-cost">--</span>
+      <span class="stat-sub">所选范围</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-label">请求次数</span>
+      <span class="stat-value" id="total-requests">--</span>
+      <span class="stat-sub" id="stat-active-days">-- 天</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-label">缓存命中率</span>
+      <span class="stat-value" id="cache-rate">--</span>
+      <span class="stat-sub">hit / total</span>
+    </div>
+  </section>
+
+  <!-- 主图表区 -->
+  <section id="charts">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>📈 Token 消耗趋势</h3>
+        <div class="seg" id="trend-seg">
+          <button data-gran="day" class="active">按天</button>
+          <button data-gran="month">按月</button>
+        </div>
+      </div>
+      <canvas id="chart-tokens"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>🧱 模型每日 Token（堆叠）</h3>
+        <span class="hint">点击柱子查看该天明细 · 浅蓝=输入·命中缓存 · 蓝=输入·未命中缓存 · 深蓝=输出</span>
+      </div>
+      <canvas id="chart-model-daily"></canvas>
+    </div>
+    <div class="chart-row">
+      <div class="panel half">
+        <div class="panel-head">
+          <h3 id="chart-model-title">🥧 模型用量分布</h3>
+          <div class="seg" id="model-seg">
+            <button data-gran="usage" class="active">用量</button>
+            <button data-gran="cost">花费</button>
+          </div>
+        </div>
+        <canvas id="chart-model"></canvas>
+      </div>
+      <div class="panel half">
+        <div class="panel-head">
+          <h3>💰 每日费用</h3>
+          <div class="seg" id="cost-seg">
+            <button data-gran="total" class="active">总费用</button>
+            <button data-gran="model">按模型</button>
+          </div>
+        </div>
+        <canvas id="chart-cost"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- 热力图（点击某天 → 显示下方明细） -->
+  <section id="heatmap-wrap">
+    <div class="panel-head">
+      <h3>🔥 按天花费热力图</h3>
+      <span class="hint">点击某天查看该日各模型用量与花费</span>
+    </div>
+    <div id="heatmap"></div>
+    <div class="heatmap-legend">
+      <span class="legend-item">少</span>
+      <span class="legend-cell l0"></span>
+      <span class="legend-cell l1"></span>
+      <span class="legend-cell l2"></span>
+      <span class="legend-cell l3"></span>
+      <span class="legend-cell l4"></span>
+      <span class="legend-item">多</span>
+    </div>
+  </section>
+
+  <!-- 每日明细（仿官方 detail-table） -->
+  <section id="day-detail">
+    <div class="panel-head">
+      <h3 id="day-detail-title">📋 每日明细 — 点击热力图中的某天</h3>
+      <div class="seg" id="detail-seg">
+        <button data-gran="model" class="active">按模型</button>
+        <button data-gran="key">按 Key × 模型</button>
+      </div>
+    </div>
+    <div id="day-detail-body">
+      <div class="detail-empty">
+        <div class="empty-graphic">📅</div>
+        <div class="empty-title">选择一个日期查看该天各模型的用量</div>
+        <div class="empty-hint">点击上方热力图格子，或使用日期选择器</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 按 API Key 统计 -->
+  <section id="api-keys">
+    <h3>🔑 按 API Key 汇总</h3>
+    <table id="api-key-table">
+      <thead>
+        <tr><th>Key 名称</th><th class="num">输入 Token</th><th class="num">输出 Token</th><th class="num">费用</th><th class="num">请求数</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- 操作栏 -->
+  <footer>
+    <button id="btn-sync" class="primary">🔄 同步全部历史</button>
+    <button id="btn-diagnose" class="ghost">🔍 诊断</button>
+    <button id="btn-export" class="ghost">⬇ 导出 CSV</button>
+    <button id="btn-clear" class="danger">🗑 清除</button>
+    <span id="last-sync"></span>
+  </footer>
+
+  <script src="../lib/chart.umd.min.js"></script>
+  <script src="../lib/csv.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

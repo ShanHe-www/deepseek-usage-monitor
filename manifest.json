@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "DeepSeek 用量全史",
+  "version": "1.0.0",
+  "description": "突破官网 30 天限制，一键抓取并永久保存全部 DeepSeek API 用量历史，图表可视化。数据仅保存在本机。",
+  "permissions": ["storage", "unlimitedStorage", "scripting"],
+  "host_permissions": ["https://platform.deepseek.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://platform.deepseek.com/*"],
+      "js": ["lib/csv.js", "lib/fflate.umd.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "DeepSeek 用量全史"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
